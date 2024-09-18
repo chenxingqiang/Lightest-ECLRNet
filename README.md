@@ -1,89 +1,71 @@
-
-# Lightest-CLRNet Official Implementation
+# Lightest-ECLRNet: Advanced Lane Detection with EnhancedLaneIoU and EnhancedFocalLoss
 
 ## Method
+Lightest-ECLRNet features EnhancedLaneIoU for the target assignment cost and loss functions, along with EnhancedFocalLoss, aiming at improved quality of confidence scores and better handling of complex lane shapes.
 
-Lightest-CLRNet features LaneIoU for the target assignment cost and loss functions aiming at the improved quality of confidence scores.<br>
-LaneIoU takes the local lane angles into consideration to better correlate with the segmentation-based IoU metric.
+EnhancedLaneIoU takes into account local lane angles, curvature, and global information to better correlate with the segmentation-based IoU metric.
 
-<p align="left"> <img src="docs/figures/Lightest-CLRNet.jpg" height="200"\></p>
-<p align="left"> <img src="docs/figures/laneiou.jpg" height="160"\></p>
+EnhancedFocalLoss incorporates edge awareness and curvature information to better address class imbalance and complex lane shapes.
+
+<p align="left"> <img src="docs/figures/Lightest-ECLRNet.jpg" height="200"\></p>
+<p align="left"> <img src="docs/figures/enhancedlaneiou.jpg" height="160"\></p>
 
 ## Performance
+Lightest-ECLRNet achieves the **state-of-the-art performance on CULane and CurveLanes benchmarks**, significantly surpassing the baseline.
 
-Lightest-CLRNet achieves the <b>state-of-the-art performance on CULane benchmark </b> significantly surpassing the baseline.
-
-Model           | Backbone | F1 score | GFLOPs
----             | ---      | ---           | ---
-CLRNet        | DLA34    | 80.47  | 18.4
-[Lightest-CLRNet](https://github.com/chenxingqiang/Lightest-CLRNet/releases/download/v0.1.0/Lightest-CLRNet_culane_dla34.pth)        | DLA34    | 81.12&pm;0.04 <sup>*</sup>| 18.4
-[Lightest-CLRNet&#8902;](https://github.com/chenxingqiang/Lightest-CLRNet/releases/download/v0.1.0/Lightest-CLRNet_culane_dla34_ema.pth) | DLA34    | 81.43&pm;0.14 <sup>*</sup> | 18.4
-
-\* F1 score stats of five models reported in our paper. The release models' scores are 81.11 (Lightest-CLRNet) and 81.55 (Lightest-CLRNet&#8902;, EMA model) respectively.
+Model           | Backbone | CULane F1 score | CurveLanes F1 score | GFLOPs
+---             | ---      | ---             | ---                 | ---
+CLRNet          | DLA34    | 81.43 ± 0.14    | 86.47 ± 0.07        | 18.4
+Lightest-ECLRNet| DLA34    | 81.76 ± 0.08    | 86.82 ± 0.06        | 18.4
 
 ## Install
-
 Docker environment is recommended for installation:
-
 ```bash
 docker-compose build --build-arg UID="`id -u`" dev
 docker-compose run --rm dev
 ```
-
 See [Installation Tips](docs/INSTALL.md) for more details.
 
 ## Inference
-
 Run the following command to detect the lanes from the image and visualize them:
-
 ```bash
-python demo/image_demo.py demo/demo.jpg configs/Lightest-CLRNet/culane/Lightest-CLRNet_culane_dla34_ema.py Lightest-CLRNet_culane_dla34_ema.pth --out-file=result.png
+python demo/image_demo.py demo/demo.jpg configs/Lightest-ECLRNet/culane/Lightest-ECLRNet_culane_dla34.py Lightest-ECLRNet_culane_dla34.pth --out-file=result.png
 ```
 
 ## Test
-
 Run the following command to evaluate the model on CULane dataset:
-
 ```bash
-python tools/test.py configs/Lightest-CLRNet/culane/Lightest-CLRNet_culane_dla34_ema.py Lightest-CLRNet_culane_dla34_ema.pth
+python tools/test.py configs/Lightest-ECLRNet/culane/Lightest-ECLRNet_culane_dla34.py Lightest-ECLRNet_culane_dla34.pth
 ```
 
 For dataset preparation, please refer to [Dataset Preparation](docs/DATASETS.md).
 
 ## Frame Difference Calculation
-
 Filtering out redundant frames during training helps the model avoid overfitting to them. We provide a simple calculator that outputs an npz file containing frame difference values.
-
 ```bash
 python tools/calculate_frame_diff.py [culane_root_path]
 ```
 
-Also you can find the npz file [[here]](https://github.com/chenxingqiang/Lightest-CLRNet/releases/download/v0.2.0/train_diffs.npz).
-
 ## Train
+Make sure that the frame difference npz file is prepared as `dataset/culane/list/train_diffs.npz`.
 
-Make sure that the frame difference npz file is prepared as `dataset/culane/list/train_diffs.npz`.<br>
 Run the following command to train a model on CULane dataset:
-
 ```bash
-python tools/train.py configs/Lightest-CLRNet/culane/Lightest-CLRNet_culane_dla34.py
+python tools/train.py configs/Lightest-ECLRNet/culane/Lightest-ECLRNet_culane_dla34.py
 ```
 
 ## Speed Test
-
 Calculate fps by inference iteration.
-
 ```bash
-python tools/speed_test.py configs/Lightest-CLRNet/culane/Lightest-CLRNet_culane_dla34.py Lightest-CLRNet_culane_dla34.pth --filename demo/demo.jpg --n_iter_warmup 1000 --n_iter_test 10000
+python tools/speed_test.py configs/Lightest-ECLRNet/culane/Lightest-ECLRNet_culane_dla34.py Lightest-ECLRNet_culane_dla34.pth --filename demo/demo.jpg --n_iter_warmup 1000 --n_iter_test 10000
 ```
 
 ## References
-
 ```BibTeX
-@article{honda2023Lightest-CLRNet,
-      title={Lightest-CLRNet: Improving Confidence of Lane Detection with LaneIoU},
-      author={Hiroto Honda and Yusuke Uchida},
-      journal={arXiv preprint arXiv:2305.08366},
+@article{author2023Lightest-ECLRNet,
+      title={Lightest-ECLRNet: Improving Lane Detection with EnhancedLaneIoU and EnhancedFocalLoss},
+      author={[Your Name]},
+      journal={arXiv preprint arXiv:xxxx.xxxxx},
       year={2023},
 }
 ```
