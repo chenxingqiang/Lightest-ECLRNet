@@ -26,7 +26,8 @@ class Lane:
     def __call__(self, lane_ys):
         lane_xs = self.function(lane_ys)
 
-        lane_xs[(lane_ys < self.min_y) | (lane_ys > self.max_y)] = self.invalid_value
+        lane_xs[(lane_ys < self.min_y) | (
+            lane_ys > self.max_y)] = self.invalid_value
         return lane_xs
 
     def __iter__(self):
@@ -87,10 +88,12 @@ def sample_lane(points, sample_ys, img_w):
 
     # interpolate points inside domain
     assert len(points) > 1
-    interp = InterpolatedUnivariateSpline(y[::-1], x[::-1], k=min(3, len(points) - 1))
+    interp = InterpolatedUnivariateSpline(
+        y[::-1], x[::-1], k=min(3, len(points) - 1))
     domain_min_y = y.min()
     domain_max_y = y.max()
-    mask_inside_domain = (sample_ys >= domain_min_y) & (sample_ys <= domain_max_y)
+    mask_inside_domain = (sample_ys >= domain_min_y) & (
+        sample_ys <= domain_max_y)
     sample_ys_inside_domain = sample_ys[mask_inside_domain]
     if len(sample_ys_inside_domain) == 0:
         return np.zeros(0), np.zeros(0)
@@ -98,7 +101,8 @@ def sample_lane(points, sample_ys, img_w):
 
     # extrapolate lane to the bottom of the image with a straight line using the 2 points closest to the bottom
     two_closest_points = points[:2]
-    extrap = np.polyfit(two_closest_points[:, 1], two_closest_points[:, 0], deg=1)
+    extrap = np.polyfit(
+        two_closest_points[:, 1], two_closest_points[:, 0], deg=1)
     extrap_ys = sample_ys[sample_ys > domain_max_y]
     extrap_xs = np.polyval(extrap, extrap_ys)
     all_xs = np.hstack((extrap_xs, interp_xs))

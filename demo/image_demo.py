@@ -13,8 +13,10 @@ def parse_args():
     parser.add_argument("img", help="Image file")
     parser.add_argument("config", help="Config file")
     parser.add_argument("checkpoint", help="Checkpoint file")
-    parser.add_argument("--out-file", default="result.png", help="Path to output file")
-    parser.add_argument("--device", default="cuda:0", help="Device used for inference")
+    parser.add_argument("--out-file", default="result.png",
+                       help="Path to output file")
+    parser.add_argument("--device", default="cuda:0",
+                       help="Device used for inference")
     parser.add_argument(
         "--score-thr", type=float, default=0.3, help="bbox score threshold"
     )

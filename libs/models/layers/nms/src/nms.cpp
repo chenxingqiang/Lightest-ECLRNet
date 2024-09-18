@@ -17,45 +17,44 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <iostream>
 #include <torch/extension.h>
 #include <torch/types.h>
-#include <iostream>
 
-std::vector<at::Tensor> nms_cuda_forward(
-        at::Tensor boxes,
-        at::Tensor idx,
-        float nms_overlap_thresh,
-        unsigned long top_k);
+std::vector<at::Tensor> nms_cuda_forward(at::Tensor boxes, at::Tensor idx,
+                                         float nms_overlap_thresh,
+                                         unsigned long top_k);
 
-#define CHECK_CUDA(x) AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
-#define CHECK_CONTIGUOUS(x) AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
-#define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
+#define CHECK_CUDA(x)                                                          \
+  AT_ASSERTM(x.type().is_cuda(), #x " must be a CUDA tensor")
+#define CHECK_CONTIGUOUS(x)                                                    \
+  AT_ASSERTM(x.is_contiguous(), #x " must be contiguous")
+#define CHECK_INPUT(x)                                                         \
+  CHECK_CUDA(x);                                                               \
+  CHECK_CONTIGUOUS(x)
 
-std::vector<at::Tensor> nms_forward(
-        at::Tensor boxes,
-        at::Tensor scores,
-        float thresh,
-        unsigned long top_k) {
+std::vector<at::Tensor> nms_forward(at::Tensor boxes, at::Tensor scores,
+                                    float thresh, unsigned long top_k) {
 
+  auto idx = std::get<1>(scores.sort(0, true));
 
-    auto idx = std::get<1>(scores.sort(0,true));
+  CHECK_INPUT(boxes);
+  CHECK_INPUT(idx);
 
-    CHECK_INPUT(boxes);
-    CHECK_INPUT(idx);
-
-    return nms_cuda_forward(boxes, idx, thresh, top_k);
+  return nms_cuda_forward(boxes, idx, thresh, top_k);
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("nms_forward", &nms_forward, "NMS");
+  m.def("nms_forward", &nms_forward, "NMS");
 }

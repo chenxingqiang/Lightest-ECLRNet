@@ -34,7 +34,8 @@ class CollectCLRNet(Collect):
         old_lanes = filter(lambda x: len(x) > 2, old_lanes)
 
         lanes = (
-            np.ones((self.max_lanes, 2 + 1 + 1 + 2 + self.n_offsets), dtype=np.float32)
+            np.ones((self.max_lanes, 2 + 1 + 1 + 2 +
+                    self.n_offsets), dtype=np.float32)
             * -1e5
         )
         lanes[:, 0] = 1
@@ -71,7 +72,7 @@ class CollectCLRNet(Collect):
             lanes[lane_idx, 3] = xs_inside_image[0]  # x0, absolute
             lanes[lane_idx, 4] = theta_far  # theta
             lanes[lane_idx, 5] = len(xs_inside_image)  # length
-            lanes[lane_idx, 6 : 6 + len(all_xs)] = all_xs  # xs, absolute
+            lanes[lane_idx, 6: 6 + len(all_xs)] = all_xs  # xs, absolute
 
         results["lanes"] = to_tensor(lanes)
         return results

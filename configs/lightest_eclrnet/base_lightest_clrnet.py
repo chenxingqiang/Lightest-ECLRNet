@@ -6,7 +6,7 @@ model = dict(
         pretrained=True,
     ),
     neck=dict(
-        type="Lightest-CLRNetFPN",
+        type="LightestECLRNetFPN",
         in_channels=[128, 256, 512],
         out_channels=64,
         num_outs=3,
@@ -26,7 +26,8 @@ model = dict(
         refine_layers=3,
         sample_points=36,
         attention=dict(type="ROIGather"),
-        loss_cls=dict(type="KorniaFocalLoss", alpha=0.25, gamma=2, loss_weight=2.0),
+        loss_cls=dict(type="KorniaFocalLoss", alpha=0.25,
+                     gamma=2, loss_weight=2.0),
         loss_bbox=dict(type="SmoothL1Loss", reduction="none", loss_weight=0.2),
         loss_iou=dict(
             type="LaneIoULoss",

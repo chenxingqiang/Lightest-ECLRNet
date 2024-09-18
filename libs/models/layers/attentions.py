@@ -40,7 +40,8 @@ class ROIGather(nn.Module):
         self.cross_attention_weight = cross_attention_weight
 
         if self.cross_attention_weight > 0:
-            self.attention = AnchorVecFeatureMapAttention(num_priors, in_channels)
+            self.attention = AnchorVecFeatureMapAttention(
+                num_priors, in_channels)
 
         # learnable layers
         self.convs = nn.ModuleList()
@@ -140,7 +141,8 @@ class ROIGather(nn.Module):
             roi: prior features with gathered global information, shape: (Batch, num_priors, fc_hidden_dim)
         """
         fmap = fmap_pyramid[layer_index]
-        roi = self.forward_roi(roi_features, layer_index, fmap.size(0))  # [B, Np, Ch]
+        roi = self.forward_roi(roi_features, layer_index,
+                               fmap.size(0))  # [B, Np, Ch]
 
         if self.cross_attention_weight > 0:
             context = self.attention(roi, fmap)
@@ -216,8 +218,8 @@ class AnchorVecFeatureMapAttention(nn.Module):
         sim_map = torch.matmul(query, key)
         sim_map = (self.dim**-0.5) * sim_map
         sim_map = F.softmax(sim_map, dim=-1)
-        context = torch.matmul(sim_map, value)  #  [B, Np, C]
-        context = self.W(context)  #  [B, Np, C]
+        context = torch.matmul(sim_map, value)  # [B, Np, C]
+        context = self.W(context)  # [B, Np, C]
         return context
 
 

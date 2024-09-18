@@ -1,6 +1,7 @@
 import torch
 from mmdet.models.builder import LOSSES
 
+
 @LOSSES.register_module
 class EnhancedLaneIoULoss(torch.nn.Module):
     def __init__(self, loss_weight=1.0, lane_width=7.5/800, img_h=320, img_w=1640, alpha=1.0, beta=0.1, lambda_=2.0):
@@ -17,31 +18,40 @@ class EnhancedLaneIoULoss(torch.nn.Module):
     def _calc_lane_width(self, pred, target):
         n_strips = pred.shape[1] - 1
         dy = self.img_h / n_strips * 2
-        
+
         pred_dx = (pred[:, 2:] - pred[:, :-2]) * self.img_w
         target_dx = (target[:, 2:] - target[:, :-2]) * self.img_w
         target_dx[torch.abs(target_dx) > self.max_dx] = 0
-        
+
         # Calculate curvature
-        pred_d2x = (pred[:, 2:] - 2 * pred[:, 1:-1] + pred[:, :-2]) * (self.img_w / dy**2)
-        target_d2x = (target[:, 2:] - 2 * target[:, 1:-1] + target[:, :-2]) * (self.img_w / dy**2)
-        
+        pred_d2x = (pred[:, 2:] - 2 * pred[:, 1:-1] +
+                    pred[:, :-2]) * (self.img_w / dy**2)
+        target_d2x = (target[:, 2:] - 2 * target[:, 1:-1] +
+                      target[:, :-2]) * (self.img_w / dy**2)
+
         pred_curvature = torch.abs(pred_d2x) / (1 + pred_dx.pow(2))**1.5
         target_curvature = torch.abs(target_d2x) / (1 + target_dx.pow(2))**1.5
-        
+
         # Calculate width considering angle and curvature
-        pred_width = self.lane_width * (torch.sqrt(pred_dx.pow(2) + dy**2) / dy)**self.alpha * (1 + self.beta * pred_curvature)
-        target_width = self.lane_width * (torch.sqrt(target_dx.pow(2) + dy**2) / dy)**self.alpha * (1 + self.beta * target_curvature)
-        
+        pred_width = self.lane_width * \
+            (torch.sqrt(pred_dx.pow(2) + dy**2) / dy)**self.alpha * \
+            (1 + self.beta * pred_curvature)
+        target_width = self.lane_width * \
+            (torch.sqrt(target_dx.pow(2) + dy**2) / dy)**self.alpha * \
+            (1 + self.beta * target_curvature)
+
         # Add global factor (simplified version, can be replaced with attention mechanism)
-        global_factor = torch.mean(torch.abs(pred - target), dim=1, keepdim=True)
+        global_factor = torch.mean(
+            torch.abs(pred - target), dim=1, keepdim=True)
         pred_width = pred_width * (1 + global_factor)
         target_width = target_width * (1 + global_factor)
-        
+
         # Pad the first and last columns
-        pred_width = torch.cat([pred_width[:, 0:1], pred_width, pred_width[:, -1:]], dim=1)
-        target_width = torch.cat([target_width[:, 0:1], target_width, target_width[:, -1:]], dim=1)
-        
+        pred_width = torch.cat(
+            [pred_width[:, 0:1], pred_width, pred_width[:, -1:]], dim=1)
+        target_width = torch.cat(
+            [target_width[:, 0:1], target_width, target_width[:, -1:]], dim=1)
+
         return pred_width, target_width
 
     def calc_iou(self, pred, target, pred_width, target_width):
@@ -64,8 +74,10 @@ class EnhancedLaneIoULoss(torch.nn.Module):
         assert pred.shape == target.shape, "prediction and target must have the same shape!"
         pred_width, target_width = self._calc_lane_width(pred, target)
         iou = self.calc_iou(pred, target, pred_width, target_width)
-        enhanced_loss = 1 - iou + self.lambda_ * (1 - torch.exp(-torch.abs(iou - 1)))
+        enhanced_loss = 1 - iou + self.lambda_ * \
+            (1 - torch.exp(-torch.abs(iou - 1)))
         return enhanced_loss.mean() * self.loss_weight
+
 
 @LOSSES.register_module
 class CLRNetIoULoss(torch.nn.Module):
@@ -155,7 +167,8 @@ class LaneIoULoss(CLRNetIoULoss):
         )
         target_dx = (target[:, 2:] - target[:, :-2]) * self.img_w
         target_dx[torch.abs(target_dx) > self.max_dx] = 0
-        target_width = self.lane_width * torch.sqrt(target_dx.pow(2) + dy**2) / dy
+        target_width = self.lane_width * \
+            torch.sqrt(target_dx.pow(2) + dy**2) / dy
         target_width = torch.cat(
             [target_width[:, 0:1], target_width, target_width[:, -1:]], dim=1
         )

@@ -40,7 +40,8 @@ class Lightest-CLRNetAnchorGenerator(nn.Module):
             )
             nn.init.constant_(self.prior_embeddings.weight[i, 1], 0.0)
             nn.init.constant_(
-                self.prior_embeddings.weight[i, 2], 0.16 if i % 2 == 0 else 0.32
+                self.prior_embeddings.weight[i,
+                                            2], 0.16 if i % 2 == 0 else 0.32
             )
 
         for i in range(left_priors_nums, left_priors_nums + bottom_priors_nums):
@@ -49,7 +50,8 @@ class Lightest-CLRNetAnchorGenerator(nn.Module):
                 self.prior_embeddings.weight[i, 1],
                 ((i - left_priors_nums) // 4 + 1) * bottom_strip_size,
             )
-            nn.init.constant_(self.prior_embeddings.weight[i, 2], 0.2 * (i % 4 + 1))
+            nn.init.constant_(
+                self.prior_embeddings.weight[i, 2], 0.2 * (i % 4 + 1))
 
         for i in range(left_priors_nums + bottom_priors_nums, self.num_priors):
             nn.init.constant_(
@@ -58,7 +60,8 @@ class Lightest-CLRNetAnchorGenerator(nn.Module):
             )
             nn.init.constant_(self.prior_embeddings.weight[i, 1], 1.0)
             nn.init.constant_(
-                self.prior_embeddings.weight[i, 2], 0.68 if i % 2 == 0 else 0.84
+                self.prior_embeddings.weight[i,
+                                            2], 0.68 if i % 2 == 0 else 0.84
             )
 
     def generate_anchors(self, anchor_params, prior_ys, sample_x_indices, img_w, img_h):
@@ -82,7 +85,8 @@ class Lightest-CLRNetAnchorGenerator(nn.Module):
             img_w - 1
         )  # (192, 72)
         y0 = (
-            anchor_params[..., 0].unsqueeze(-1).clone().repeat(1, self.num_offsets)
+            anchor_params[...,
+                         0].unsqueeze(-1).clone().repeat(1, self.num_offsets)
         )  # (192, 72)
         theta = anchor_params[..., 2].unsqueeze(-1).clone()
         theta = theta.repeat(1, self.num_offsets) * np.pi

@@ -28,7 +28,8 @@ class FocalCost:
             * cls_pred.pow(self.gamma)
         )
         pos_cost = (
-            -(cls_pred + self.eps).log() * self.alpha * (1 - cls_pred).pow(self.gamma)
+            -(cls_pred + self.eps).log() *
+           self.alpha * (1 - cls_pred).pow(self.gamma)
         )
         cls_cost = pos_cost[:, gt_labels] - neg_cost[:, gt_labels]
         return cls_cost * self.weight
@@ -51,7 +52,8 @@ class DistanceCost:
 
         predictions = torch.repeat_interleave(
             predictions, num_targets, dim=0
-        )  # repeat_interleave'ing [a, b] 2 times gives [a, a, b, b] ((np + nt) * 78)
+            # repeat_interleave'ing [a, b] 2 times gives [a, a, b, b] ((np + nt) * 78)
+        )
 
         targets = torch.cat(
             num_priors * [targets]
@@ -192,7 +194,8 @@ class LaneIoUCost(CLRNetIoUCost, LaneIoULoss):
         h = pred.shape[-1] - 1
         start_idx = (start * h).long().view(-1, 1, 1)
         end_idx = (end * h).long().view(-1, 1, 1)
-        invalid_mask_pred = invalid_mask_pred | (yind < start_idx) | (yind >= end_idx)
+        invalid_mask_pred = invalid_mask_pred | (
+            yind < start_idx) | (yind >= end_idx)
 
         # set ovr and union to zero at horizon lines where either pred or gt is missing
         invalid_mask_pred_gt = invalid_mask_pred | invalid_mask_gt
@@ -243,12 +246,14 @@ class LaneIoUCost(CLRNetIoUCost, LaneIoULoss):
         Nlp, Nlt: number of prediction and target lanes, Nr: number of rows.
         """
         pred_width, target_width = self._calc_lane_width(pred, target)
-        ovr, union = self._calc_over_union(pred, target, pred_width, target_width)
+        ovr, union = self._calc_over_union(
+            pred, target, pred_width, target_width)
         if self.use_pred_start_end is True:
             ovr, union = self._set_invalid_with_start_end(
                 pred, target, ovr, union, start, end, pred_width, target_width
             )
         else:
-            ovr, union = self._set_invalid_without_start_end(pred, target, ovr, union)
+            ovr, union = self._set_invalid_without_start_end(
+                pred, target, ovr, union)
         iou = ovr.sum(dim=-1) / (union.sum(dim=-1) + 1e-9)
         return iou * self.weight

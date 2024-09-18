@@ -82,7 +82,8 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         expansion = Bottleneck.expansion
         bottle_planes = planes // expansion
-        self.conv1 = nn.Conv2d(inplanes, bottle_planes, kernel_size=1, bias=False)
+        self.conv1 = nn.Conv2d(inplanes, bottle_planes,
+                              kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
         self.conv2 = nn.Conv2d(
             bottle_planes,
@@ -94,7 +95,8 @@ class Bottleneck(nn.Module):
             dilation=dilation,
         )
         self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv3 = nn.Conv2d(bottle_planes, planes, kernel_size=1, bias=False)
+        self.conv3 = nn.Conv2d(bottle_planes, planes,
+                              kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.stride = stride
@@ -130,7 +132,8 @@ class BottleneckX(nn.Module):
         # dim = int(math.floor(planes * (BottleneckV5.expansion / 64.0)))
         # bottle_planes = dim * cardinality
         bottle_planes = planes * cardinality // 32
-        self.conv1 = nn.Conv2d(inplanes, bottle_planes, kernel_size=1, bias=False)
+        self.conv1 = nn.Conv2d(inplanes, bottle_planes,
+                              kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
         self.conv2 = nn.Conv2d(
             bottle_planes,
@@ -143,7 +146,8 @@ class BottleneckX(nn.Module):
             groups=cardinality,
         )
         self.bn2 = nn.BatchNorm2d(bottle_planes, momentum=BN_MOMENTUM)
-        self.conv3 = nn.Conv2d(bottle_planes, planes, kernel_size=1, bias=False)
+        self.conv3 = nn.Conv2d(bottle_planes, planes,
+                              kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.stride = stride
@@ -215,8 +219,10 @@ class Tree(nn.Module):
         if level_root:
             root_dim += in_channels
         if levels == 1:
-            self.tree1 = block(in_channels, out_channels, stride, dilation=dilation)
-            self.tree2 = block(out_channels, out_channels, 1, dilation=dilation)
+            self.tree1 = block(in_channels, out_channels,
+                              stride, dilation=dilation)
+            self.tree2 = block(out_channels, out_channels,
+                              1, dilation=dilation)
         else:
             self.tree1 = Tree(
                 levels - 1,
@@ -240,7 +246,8 @@ class Tree(nn.Module):
                 root_residual=root_residual,
             )
         if levels == 1:
-            self.root = Root(root_dim, out_channels, root_kernel_size, root_residual)
+            self.root = Root(root_dim, out_channels,
+                            root_kernel_size, root_residual)
         self.level_root = level_root
         self.root_dim = root_dim
         self.downsample = None
@@ -288,11 +295,13 @@ class DLA(nn.Module):
         self.num_classes = num_classes
         self.out_indices = out_indices
         self.base_layer = nn.Sequential(
-            nn.Conv2d(3, channels[0], kernel_size=7, stride=1, padding=3, bias=False),
+            nn.Conv2d(3, channels[0], kernel_size=7,
+                     stride=1, padding=3, bias=False),
             nn.BatchNorm2d(channels[0], momentum=BN_MOMENTUM),
             nn.ReLU(inplace=True),
         )
-        self.level0 = self._make_conv_level(channels[0], channels[0], levels[0])
+        self.level0 = self._make_conv_level(
+            channels[0], channels[0], levels[0])
         self.level1 = self._make_conv_level(
             channels[0], channels[1], levels[1], stride=2
         )
@@ -346,7 +355,8 @@ class DLA(nn.Module):
         if stride != 1 or inplanes != planes:
             downsample = nn.Sequential(
                 nn.MaxPool2d(stride, stride=stride),
-                nn.Conv2d(inplanes, planes, kernel_size=1, stride=1, bias=False),
+                nn.Conv2d(inplanes, planes, kernel_size=1,
+                         stride=1, bias=False),
                 nn.BatchNorm2d(planes, momentum=BN_MOMENTUM),
             )
 
@@ -399,9 +409,11 @@ class DLA(nn.Module):
 
 
 def dla34(pretrained=True, levels=None, in_channels=None, **kwargs):  # DLA-34
-    model = DLA(levels=levels, channels=in_channels, block=BasicBlock, **kwargs)
+    model = DLA(levels=levels, channels=in_channels,
+               block=BasicBlock, **kwargs)
     if pretrained:
-        model.load_pretrained_model(data="imagenet", name="dla34", hash="ba72cf86")
+        model.load_pretrained_model(
+            data="imagenet", name="dla34", hash="ba72cf86")
     return model
 
 
@@ -449,6 +461,7 @@ def fill_up_weights(up):
     c = (2 * f - 1 - f % 2) / (2.0 * f)
     for i in range(w.size(2)):
         for j in range(w.size(3)):
-            w[0, 0, i, j] = (1 - math.fabs(i / f - c)) * (1 - math.fabs(j / f - c))
+            w[0, 0, i, j] = (1 - math.fabs(i / f - c)) * \
+                (1 - math.fabs(j / f - c))
     for c in range(1, w.size(0)):
         w[c, 0, :, :] = w[0, 0, :, :]

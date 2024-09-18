@@ -120,7 +120,8 @@ class DynamicTopkAssigner(BaseAssigner):
         start_xys_score = torch.cdist(
             pred_reg_params[:, :2], target_start_xys, p=2
         ).reshape(num_priors, num_targets)
-        start_xys_score = (1 - start_xys_score / torch.max(start_xys_score)) + 1e-2
+        start_xys_score = (1 - start_xys_score /
+                          torch.max(start_xys_score)) + 1e-2
 
         pred_thetas = pred_reg_params[:, 2:3]  # (192, 1)
         target_thetas = targets[:, 4:5]  # (4, 1)
@@ -213,12 +214,14 @@ class DynamicTopkAssigner(BaseAssigner):
                 predictions, targets, pred_xs, target_xs, img_w, img_h
             )
         elif self.cost_combination == 1:  # Lightest-CLRNet
-            cost = self._Lightest-CLRNet_cost(predictions, targets, pred_xs, target_xs)
+            cost = self._Lightest - \
+                CLRNet_cost(predictions, targets, pred_xs, target_xs)
         else:
             raise NotImplementedError(
                 f"cost_combination {self.cost_combination} is not implemented!"
             )
 
-        matched_row_inds, matched_col_inds = self.dynamic_k_assign(cost, iou_dynamick)
+        matched_row_inds, matched_col_inds = self.dynamic_k_assign(
+            cost, iou_dynamick)
 
         return matched_row_inds, matched_col_inds

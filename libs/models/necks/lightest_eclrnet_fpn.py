@@ -12,7 +12,7 @@ from mmdet.models.builder import NECKS
 
 
 @NECKS.register_module
-class Lightest-CLRNetFPN(nn.Module):
+class LightestECLRNetFPN(nn.Module):
     def __init__(self, in_channels, out_channels, num_outs):
         """
         Feature pyramid network for Lightest-CLRNet.
@@ -21,7 +21,7 @@ class Lightest-CLRNetFPN(nn.Module):
             out_channels (int): Number of output feature map channels.
             num_outs (int): Number of output feature map levels.
         """
-        super(Lightest-CLRNetFPN, self).__init__()
+        super(LightestECLRNetFPN, self).__init__()
         assert isinstance(in_channels, list)
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -93,5 +93,6 @@ class Lightest-CLRNetFPN(nn.Module):
                 laterals[i], size=prev_shape, mode='nearest'
             )
 
-        outs = [self.fpn_convs[i](laterals[i]) for i in range(used_backbone_levels)]
+        outs = [self.fpn_convs[i](laterals[i])
+                for i in range(used_backbone_levels)]
         return tuple(outs)

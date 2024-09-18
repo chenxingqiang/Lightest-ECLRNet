@@ -19,7 +19,8 @@ class SegDecoder(nn.Module):
     ):
         super().__init__()
         self.dropout = nn.Dropout2d(0.1)
-        self.conv = nn.Conv2d(prior_feat_channels * refine_layers, num_classes, 1)
+        self.conv = nn.Conv2d(prior_feat_channels *
+                             refine_layers, num_classes, 1)
         self.image_height = image_height
         self.image_width = image_width
 

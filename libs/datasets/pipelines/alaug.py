@@ -54,12 +54,14 @@ class Alaug(object):
             transforms = transform["transforms"]
             choices = []
             for t in transforms:
-                parmas = {key: value for key, value in t.items() if key != "type"}
+                parmas = {key: value for key,
+                          value in t.items() if key != "type"}
                 choice = getattr(al, t["type"])(**parmas)
                 choices.append(choice)
             return getattr(al, "OneOf")(transforms=choices, p=transform["p"])
 
-        parmas = {key: value for key, value in transform.items() if key != "type"}
+        parmas = {key: value for key, value in transform.items()
+                  if key != "type"}
         return getattr(al, transform["type"])(**parmas)
 
     def build(self):
@@ -132,7 +134,7 @@ class Alaug(object):
             for kps in keypoints:
                 num = int(len(kps) / 2)
                 for i in range(num):
-                    keypoints_val.append(kps[2 * i : 2 * i + 2])
+                    keypoints_val.append(kps[2 * i: 2 * i + 2])
             num_keypoints = len(kps) // 2
         else:
             keypoints_val = None
@@ -148,7 +150,7 @@ class Alaug(object):
             for pts in points:
                 num = int(len(pts) / 2)
                 for i in range(num):
-                    points_val.append(pts[2 * i : 2 * i + 2])
+                    points_val.append(pts[2 * i: 2 * i + 2])
             num_keypoints = len(points_val) // 2
             if keypoints_val is None:
                 keypoints_val = points_val

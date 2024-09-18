@@ -1,19 +1,19 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 # packages
-RUN apt-get update && \
+RUN apt-get update &&
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    sudo git zip curl \
-    libopencv-dev libffi-dev liblapack-dev libsqlite3-dev \
-    build-essential libssl-dev libbz2-dev libreadline-dev \
-    ssh-client wget vim python3-opencv &&\
+        sudo git zip curl \
+        libopencv-dev libffi-dev liblapack-dev libsqlite3-dev \
+        build-essential libssl-dev libbz2-dev libreadline-dev \
+        ssh-client wget vim python3-opencv &&
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # user setting
 ARG UID
 RUN useradd docker -l -u $UID -G sudo -s /bin/bash -m
-RUN echo 'Defaults visiblepw' >> /etc/sudoers
-RUN echo 'docker ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN echo 'Defaults visiblepw' >>/etc/sudoers
+RUN echo 'docker ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
 USER docker
 
 # python

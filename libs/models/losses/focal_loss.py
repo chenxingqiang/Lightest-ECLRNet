@@ -34,7 +34,8 @@ class EnhancedFocalLoss(nn.Module):
                                     [-1,  8, -1],
                                     [-1, -1, -1]], dtype=torch.float32, device=target.device)
         edge_kernel = edge_kernel.view(1, 1, 3, 3)
-        padded_target = F.pad(target.unsqueeze(1).float(), (1, 1, 1, 1), mode='replicate')
+        padded_target = F.pad(target.unsqueeze(1).float(),
+                              (1, 1, 1, 1), mode='replicate')
         edges = F.conv2d(padded_target, edge_kernel, padding=0).squeeze(1)
         edge_weights = torch.exp(self.edge_weight * edges.abs())
         return edge_weights
@@ -43,15 +44,18 @@ class EnhancedFocalLoss(nn.Module):
         dx = target[:, 2:] - target[:, :-2]
         d2x = target[:, 2:] - 2 * target[:, 1:-1] + target[:, :-2]
         curvature = torch.abs(d2x) / (1 + dx.pow(2))**1.5
-        curve_weights = torch.exp(self.curve_weight * F.pad(curvature, (1, 1), mode='replicate'))
+        curve_weights = torch.exp(
+            self.curve_weight * F.pad(curvature, (1, 1), mode='replicate'))
         return curve_weights
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         if not torch.is_tensor(input):
-            raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(input)))
+            raise TypeError(
+                "Input type is not a torch.Tensor. Got {}".format(type(input)))
 
         if not len(input.shape) >= 2:
-            raise ValueError("Invalid input shape, we expect BxCx*. Got: {}".format(input.shape))
+            raise ValueError(
+                "Invalid input shape, we expect BxCx*. Got: {}".format(input.shape))
 
         if input.size(0) != target.size(0):
             raise ValueError("Expected input batch_size ({}) to match target batch_size ({}).".format(
@@ -61,7 +65,8 @@ class EnhancedFocalLoss(nn.Module):
         n = input.size(0)
         out_size = (n,) + input.size()[2:]
         if target.size()[1:] != input.size()[2:]:
-            raise ValueError("Expected target size {}, got {}".format(out_size, target.size()))
+            raise ValueError("Expected target size {}, got {}".format(
+                out_size, target.size()))
 
         if not input.device == target.device:
             raise ValueError("input and target must be in the same device. Got: {} and {}".format(
@@ -100,8 +105,9 @@ class EnhancedFocalLoss(nn.Module):
         elif self.reduction == "sum":
             loss = torch.sum(loss_tmp)
         else:
-            raise NotImplementedError("Invalid reduction mode: {}".format(self.reduction))
-        
+            raise NotImplementedError(
+                "Invalid reduction mode: {}".format(self.reduction))
+
         return loss * self.loss_weight
 
 
@@ -139,11 +145,13 @@ def one_hot(
     """
     if not torch.is_tensor(labels):
         raise TypeError(
-            "Input labels type is not a torch.Tensor. Got {}".format(type(labels))
+            "Input labels type is not a torch.Tensor. Got {}".format(
+                type(labels))
         )
     if not labels.dtype == torch.int64:
         raise ValueError(
-            "labels must be of the same dtype torch.int64. Got: {}".format(labels.dtype)
+            "labels must be of the same dtype torch.int64. Got: {}".format(
+                labels.dtype)
         )
     if num_classes < 1:
         raise ValueError(
@@ -151,7 +159,8 @@ def one_hot(
             " Got: {}".format(num_classes)
         )
     shape = labels.shape
-    one_hot = torch.zeros(shape[0], num_classes, *shape[1:], device=device, dtype=dtype)
+    one_hot = torch.zeros(shape[0], num_classes,
+                          *shape[1:], device=device, dtype=dtype)
     return one_hot.scatter_(1, labels.unsqueeze(1), 1.0) + eps
 
 
@@ -167,7 +176,8 @@ def focal_loss(
     See :class:`~kornia.losses.FocalLoss` for details.
     """
     if not torch.is_tensor(input):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(type(input)))
+        raise TypeError(
+            "Input type is not a torch.Tensor. Got {}".format(type(input)))
 
     if not len(input.shape) >= 2:
         raise ValueError(
@@ -216,7 +226,8 @@ def focal_loss(
     elif reduction == "sum":
         loss = torch.sum(loss_tmp)
     else:
-        raise NotImplementedError("Invalid reduction mode: {}".format(reduction))
+        raise NotImplementedError(
+            "Invalid reduction mode: {}".format(reduction))
     return loss
 
 
@@ -269,6 +280,7 @@ class KorniaFocalLoss(nn.Module):
         self, input: torch.Tensor, target: torch.Tensor
     ) -> torch.Tensor:
         return (
-            focal_loss(input, target, self.alpha, self.gamma, self.reduction, self.eps)
+            focal_loss(input, target, self.alpha,
+                       self.gamma, self.reduction, self.eps)
             * self.loss_weight
         )

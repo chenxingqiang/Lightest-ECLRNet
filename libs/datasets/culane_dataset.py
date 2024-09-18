@@ -47,7 +47,8 @@ class CulaneDataset(CustomDataset):
         self.test_mode = test_mode
         self.ori_w, self.ori_h = 1640, 590
         # read image list
-        self.diffs = np.load(diff_file)["data"] if diff_file is not None else []
+        self.diffs = np.load(diff_file)[
+            "data"] if diff_file is not None else []
         self.diff_thr = diff_thr
         self.img_infos, self.annotations, self.mask_paths = self.parse_datalist(
             data_list
@@ -61,7 +62,8 @@ class CulaneDataset(CustomDataset):
         self.pipeline = Compose(pipeline)
         self.result_dir = "tmp"
         self.list_path = data_list
-        self.test_categories_dir = str(Path(data_root).joinpath("list/test_split/"))
+        self.test_categories_dir = str(
+            Path(data_root).joinpath("list/test_split/"))
         self.y_step = y_step
 
     def parse_datalist(self, data_list):
@@ -248,7 +250,8 @@ class CulaneDataset(CustomDataset):
             if len(lane_xs) < 2:
                 continue
             lane_str = " ".join(
-                ["{:.5f} {:.5f}".format(x, y) for x, y in zip(lane_xs, lane_ys)]
+                ["{:.5f} {:.5f}".format(x, y)
+                for x, y in zip(lane_xs, lane_ys)]
             )
             if lane_str != "":
                 out.append(lane_str)

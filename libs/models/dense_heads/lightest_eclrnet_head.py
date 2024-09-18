@@ -51,7 +51,8 @@ class CLRerHead(nn.Module):
         self.attention = build_attention(attention)
         self.loss_cls = build_loss(loss_cls)
         self.loss_bbox = build_loss(loss_bbox)
-        self.loss_seg = build_loss(loss_seg) if loss_seg["loss_weight"] > 0 else None
+        self.loss_seg = build_loss(
+            loss_seg) if loss_seg["loss_weight"] > 0 else None
         self.loss_iou = build_loss(loss_iou)
         self.train_cfg = train_cfg
         self.test_cfg = test_cfg
@@ -62,7 +63,8 @@ class CLRerHead(nn.Module):
         self.register_buffer(
             name="sample_x_indices",
             tensor=(
-                torch.linspace(0, 1, steps=self.sample_points, dtype=torch.float32)
+                torch.linspace(0, 1, steps=self.sample_points,
+                               dtype=torch.float32)
                 * self.n_strips
             ).long(),
         )
@@ -74,7 +76,8 @@ class CLRerHead(nn.Module):
         )
         self.register_buffer(
             name="prior_ys",
-            tensor=torch.linspace(1, 0, steps=self.n_offsets, dtype=torch.float32),
+            tensor=torch.linspace(
+                1, 0, steps=self.n_offsets, dtype=torch.float32),
         )
 
         reg_modules = list()
@@ -163,7 +166,7 @@ class CLRerHead(nn.Module):
         B: batch size, Np: number of priors (anchors), Nr: num_points (rows).
         """
         batch_size = x[0].shape[0]
-        feature_pyramid = list(x[len(x) - self.refine_layers :])
+        feature_pyramid = list(x[len(x) - self.refine_layers:])
         feature_pyramid.reverse()
         # e.g. [1, 64, 10, 25], [1, 64, 20, 50] [1, 64, 40, 100]
 
@@ -185,10 +188,12 @@ class CLRerHead(nn.Module):
         # iterative refine
         pooled_features_stages = []
         for stage in range(self.refine_layers):
-            prior_xs = priors_on_featmap  # torch.flip(priors_on_featmap, dims=[2])  # [24, 192, 36]
+            # torch.flip(priors_on_featmap, dims=[2])  # [24, 192, 36]
+            prior_xs = priors_on_featmap
             # 1. anchor ROI pooling
             # [B, C, H, W] X [B, Np, Ns] => [B * Np, C, Ns, 1]
-            pooled_features = self.pool_prior_features(feature_pyramid[stage], prior_xs)
+            pooled_features = self.pool_prior_features(
+                feature_pyramid[stage], prior_xs)
             pooled_features_stages.append(pooled_features)
 
             # 2. ROI gather
@@ -226,7 +231,8 @@ class CLRerHead(nn.Module):
                 self.img_w,
                 self.img_h,
             )
-            updated_anchor_xs = updated_anchor_xs.view(batch_size, self.num_priors, -1)
+            updated_anchor_xs = updated_anchor_xs.view(
+                batch_size, self.num_priors, -1)
             reg_xs = updated_anchor_xs + reg[..., 4:]
 
             pred_dict = {
@@ -271,7 +277,8 @@ class CLRerHead(nn.Module):
 
         for stage in range(self.refine_layers):
             for b, img_meta in enumerate(img_metas):
-                pred_dict = {k: v[b] for k, v in out_dict["predictions"][stage].items()}
+                pred_dict = {k: v[b]
+                             for k, v in out_dict["predictions"][stage].items()}
                 cls_pred = pred_dict["cls_logits"]
                 target = img_meta["lanes"].clone().to(device)  # [n_lanes, 78]
                 target = target[target[:, 1] == 1]
@@ -279,7 +286,8 @@ class CLRerHead(nn.Module):
 
                 if len(target) == 0:
                     # If there are no targets, all predictions have to be negatives (i.e., 0 confidence)
-                    cls_loss = cls_loss + self.loss_cls(cls_pred, cls_target).sum()
+                    cls_loss = cls_loss + \
+                        self.loss_cls(cls_pred, cls_target).sum()
                     continue
 
                 with torch.no_grad():
@@ -291,7 +299,8 @@ class CLRerHead(nn.Module):
                 cls_target[matched_row_inds] = 1
                 cls_loss = (
                     cls_loss
-                    + self.loss_cls(cls_pred, cls_target).sum() / target.shape[0]
+                    + self.loss_cls(cls_pred, cls_target).sum() /
+                    target.shape[0]
                 )
 
                 # regression targets -> [start_y, start_x, theta]
@@ -317,7 +326,8 @@ class CLRerHead(nn.Module):
                         reg_yxtl[:, 0].round().long(), 0, self.n_strips
                     )  # ensure the predictions starts is valid
                     target_starts = (
-                        (target[matched_col_inds, 2] * self.n_strips).round().long()
+                        (target[matched_col_inds, 2] *
+                         self.n_strips).round().long()
                     )
                     target_yxtl[:, -1] -= predictions_starts - target_starts
 
@@ -326,11 +336,13 @@ class CLRerHead(nn.Module):
                 target_yxtl[:, 2] *= 180
 
                 reg_xytl_loss = (
-                    reg_xytl_loss + self.loss_bbox(reg_yxtl, target_yxtl).mean()
+                    reg_xytl_loss +
+                    self.loss_bbox(reg_yxtl, target_yxtl).mean()
                 )
 
                 iou_loss = iou_loss + self.loss_iou(
-                    pred_xs * (self.img_w - 1) / self.img_w, target_xs / self.img_w
+                    pred_xs * (self.img_w - 1) /
+                    self.img_w, target_xs / self.img_w
                 )
 
         cls_loss /= batch_size * self.refine_layers
@@ -377,13 +389,14 @@ class CLRerHead(nn.Module):
             torch.tensor: segmentation maps, shape (B, C, H, W), where
             B: batch size, C: segmentation channels, H and W: the largest feature's spatial shape.
         """
-        batch_features = list(x[len(x) - self.refine_layers :])
+        batch_features = list(x[len(x) - self.refine_layers:])
         batch_features.reverse()
         seg_features = torch.cat(
             [
                 F.interpolate(
                     feature,
-                    size=[batch_features[-1].shape[2], batch_features[-1].shape[3]],
+                    size=[batch_features[-1].shape[2],
+                          batch_features[-1].shape[3]],
                     mode="bilinear",
                     align_corners=False,
                 )
@@ -451,7 +464,8 @@ class CLRerHead(nn.Module):
             anchor_params = anchor_params[keep]
 
         lengths = torch.round(lengths * self.n_strips)
-        pred = self.predictions_to_lanes(xs, anchor_params, lengths, scores, as_lanes)
+        pred = self.predictions_to_lanes(
+            xs, anchor_params, lengths, scores, as_lanes)
 
         return pred, scores
 
@@ -489,8 +503,8 @@ class CLRerHead(nn.Module):
             if extend_bottom:
                 edge = (lane_xs[:start] >= 0.0) & (lane_xs[:start] <= 1.0)
                 start -= edge.flip(0).cumprod(dim=0).sum()
-            lane_ys = prior_ys[start : end + 1]
-            lane_xs = lane_xs[start : end + 1]
+            lane_ys = prior_ys[start: end + 1]
+            lane_xs = lane_xs[start: end + 1]
             lane_xs = lane_xs.flip(0).double()
             lane_ys = lane_ys.flip(0)
 
@@ -528,7 +542,8 @@ class CLRerHead(nn.Module):
                 scores (torch.Tensor): Confidence scores of the lanes.
         """
         pred_dict = self(feats)[-1]
-        lanes, scores = self.get_lanes(pred_dict, as_lanes=self.test_cfg.as_lanes)
+        lanes, scores = self.get_lanes(
+            pred_dict, as_lanes=self.test_cfg.as_lanes)
         result_dict = {
             "lanes": lanes,
             "scores": scores,

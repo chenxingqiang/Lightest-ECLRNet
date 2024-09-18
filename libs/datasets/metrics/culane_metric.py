@@ -66,8 +66,10 @@ def culane_metric(
             cat (str): category name
             hits (List[np.ndarray]): bool array (TP or not)
     """
-    interp_pred = np.array([interp(pred_lane, n=5) for pred_lane in pred], dtype=object)
-    interp_anno = np.array([interp(anno_lane, n=5) for anno_lane in anno], dtype=object)
+    interp_pred = np.array([interp(pred_lane, n=5)
+                           for pred_lane in pred], dtype=object)
+    interp_anno = np.array([interp(anno_lane, n=5)
+                           for anno_lane in anno], dtype=object)
 
     ious = discrete_cross_iou(
         interp_pred, interp_anno, width=width, img_shape=img_shape
@@ -124,7 +126,7 @@ def load_culane_data(data_dir, file_list_path, data_cats):
     """
     with open(file_list_path, "r") as file_list:
         data_paths = [
-            line[1 if line[0] == "/" else 0 :].rstrip()
+            line[1 if line[0] == "/" else 0:].rstrip()
             for line in file_list.readlines()
         ]
         cats = [
@@ -169,7 +171,8 @@ def load_categories(categories_path):
         with open(
             Path(categories_path).joinpath(category).with_suffix(".txt"), "r"
         ) as file_list:
-            data_cats.update({k.rstrip(): category for k in file_list.readlines()})
+            data_cats.update(
+                {k.rstrip(): category for k in file_list.readlines()})
     return data_cats, categories
 
 
@@ -201,9 +204,11 @@ def eval_predictions(
     print_log("List: {}".format(list_path), logger=logger)
     data_cats, categories = load_categories(categories_dir)
     print_log("Loading prediction data...", logger=logger)
-    predictions, _ = load_culane_data(pred_dir, list_path, data_cats)  # (34680,)
+    predictions, _ = load_culane_data(
+        pred_dir, list_path, data_cats)  # (34680,)
     print_log("Loading annotation data...", logger=logger)
-    annotations, cats = load_culane_data(anno_dir, list_path, data_cats)  # (34680,)
+    annotations, cats = load_culane_data(
+        anno_dir, list_path, data_cats)  # (34680,)
     print_log(
         "Calculating metric {}...".format(
             "sequentially" if sequential else "in parallel"
@@ -240,7 +245,8 @@ def eval_predictions(
     result_dict = {}
 
     for k, iou_thr in enumerate(iou_thresholds):
-        print_log(f"Evaluation results for IoU threshold = {iou_thr}", logger=logger)
+        print_log(f"Evaluation results for IoU threshold = {
+                  iou_thr}", logger=logger)
         for i in range(len(categories) + 1):
             category = categories if i == 0 else [categories[i - 1]]
             n_gt_list = [r["n_gt"] for r in results if r["cat"] in category]
@@ -274,8 +280,10 @@ def eval_predictions(
                 result_dict.update({f"F1_{cat_name}_{iou_thr}": f1})
 
             print_log(
-                f"Eval category: {cat_name:12}, N: {n_category:4}, TP: {tp:5}, "
-                f"FP: {fp:5}, FN: {n_gts-tp:5}, Precision: {prec:.4f}, Recall: {rec:.4f}, "
+                f"Eval category: {cat_name:12}, N: {
+                    n_category:4}, TP: {tp:5}, "
+                f"FP: {fp:5}, FN: {
+                    n_gts-tp:5}, Precision: {prec:.4f}, Recall: {rec:.4f}, "
                 f"F1: {f1:.4f}",
                 logger=logger,
             )

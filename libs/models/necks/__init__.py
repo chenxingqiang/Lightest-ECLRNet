@@ -1,1 +1,1 @@
-from .Lightest-CLRNet_fpn import Lightest-CLRNetFPN
+from .Lightest-CLRNet_fpn import LightestECLRNetFPN
