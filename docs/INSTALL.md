@@ -10,7 +10,7 @@ sudo service docker start
 ```
 
 To install NMS extension, nvidia runtine must be enabled during build.
-Add `default-runtime` to `/etc/docker/daemon.json` as follows:  
+Add `default-runtime` to `/etc/docker/daemon.json` as follows:
 ```
 {
     "runtimes": {

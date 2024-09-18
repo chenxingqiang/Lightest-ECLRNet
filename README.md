@@ -73,10 +73,10 @@ graph TD
     K --> L[Output: EnhancedLaneIOU Score]
     
     subgraph Key Principles
-        M[1. Local Angle Consideration]
-        N[2. Curvature Adaptation]
-        O[3. Global Information Integration]
-        P[4. Dynamic Width Adjustment]
+        M[1 Local Angle Consideration]
+        N[2 Curvature Adaptation]
+        O[3 Global Information Integration]
+        P[4 Dynamic Width Adjustment]
     end
     
     style M fill:#f9f,stroke:#333,stroke-width:2px
