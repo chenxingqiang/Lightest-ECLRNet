@@ -152,7 +152,7 @@ python tools/speed_test.py configs/Lightest-ECLRNet/culane/Lightest-ECLRNet_cula
 ## References
 
 ```BibTeX
-@article{author2023Lightest-ECLRNet,
+@article{author2024Lightest-ECLRNet,
       title={Lightest-ECLRNet: Improving Lane Detection with EnhancedLaneIoU and EnhancedFocalLoss},
       author={[Xingqiang,Chen; Gang,Yuan]},
       journal={arXiv preprint arXiv:xxxx.xxxxx},
