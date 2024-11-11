@@ -1,98 +1,111 @@
-"""
-Adapted from:
-https://github.com/Turoad/CLRNet/blob/main/clrnet/models/necks/fpn.py
-"""
-
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from mmcv.cnn import ConvModule
 from mmdet.models.builder import NECKS
 
+class AdaptiveFeatureFusion(nn.Module):
+    def __init__(self, channels):
+        super().__init__()
+        self.attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(channels, channels, 1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channels, channels, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, current, upsampled):
+        alpha = self.attention(current)
+        return alpha * current + (1 - alpha) * upsampled
+
+class PyramidPooling(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.pools = nn.ModuleList([
+            nn.AdaptiveAvgPool2d((1, 1)),
+            nn.AdaptiveAvgPool2d((2, 2)),
+            nn.AdaptiveAvgPool2d((4, 4))
+        ])
+        self.conv = nn.Conv2d(in_channels * 21, out_channels, 1)
+
+    def forward(self, x):
+        features = []
+        for pool in self.pools:
+            features.append(pool(x))
+        concat_features = torch.cat([x] + features, dim=1)
+        return self.conv(concat_features)
 
 @NECKS.register_module
 class LightestECLRNetFPN(nn.Module):
     def __init__(self, in_channels, out_channels, num_outs):
-        """
-        Feature pyramid network for Lightest-CLRNet.
-        Args:
-            in_channels (List[int]): Channel number list.
-            out_channels (int): Number of output feature map channels.
-            num_outs (int): Number of output feature map levels.
-        """
         super(LightestECLRNetFPN, self).__init__()
         assert isinstance(in_channels, list)
+
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.num_ins = len(in_channels)
         self.num_outs = num_outs
 
-        self.backbone_end_level = self.num_ins
-        self.start_level = 0
+        # Progressive channel reduction
+        reduced_channels = [
+            out_channels,
+            out_channels * 3 // 4,
+            out_channels // 2
+        ]
+
+        # Lateral convs with channel compression
         self.lateral_convs = nn.ModuleList()
-        self.fpn_convs = nn.ModuleList()
-
-        for i in range(self.start_level, self.backbone_end_level):
-            l_conv = ConvModule(
-                in_channels[i],
-                out_channels,
-                1,
-                conv_cfg=None,
-                norm_cfg=None,
-                act_cfg=None,
-                inplace=False,
-            )
-            fpn_conv = ConvModule(
-                out_channels,
-                out_channels,
-                3,
-                padding=1,
-                conv_cfg=None,
-                norm_cfg=None,
-                act_cfg=None,
-                inplace=False,
+        for i in range(len(in_channels)):
+            self.lateral_convs.append(
+                nn.Sequential(
+                    # Depthwise separable convolution
+                    nn.Conv2d(in_channels[i], in_channels[i], 3,
+                             padding=1, groups=in_channels[i]),
+                    nn.BatchNorm2d(in_channels[i]),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(in_channels[i], reduced_channels[i], 1),
+                    nn.BatchNorm2d(reduced_channels[i])
+                )
             )
 
-            self.lateral_convs.append(l_conv)
-            self.fpn_convs.append(fpn_conv)
+        # Adaptive feature fusion
+        self.fusions = nn.ModuleList([
+            AdaptiveFeatureFusion(reduced_channels[i])
+            for i in range(len(reduced_channels)-1)
+        ])
+
+        # Pyramid pooling modules
+        self.pyramid_pools = nn.ModuleList([
+            PyramidPooling(reduced_channels[i], reduced_channels[i])
+            for i in range(len(reduced_channels))
+        ])
 
     def forward(self, inputs):
-        """
-        Args:
-            inputs (List[torch.Tensor]): Input feature maps.
-              Example of shapes:
-                ([1, 64, 80, 200], [1, 128, 40, 100], [1, 256, 20, 50], [1, 512, 10, 25]).
-        Returns:
-            outputs (Tuple[torch.Tensor]): Output feature maps.
-              The number of feature map levels and channels correspond to
-               `num_outs` and `out_channels` respectively.
-              Example of shapes:
-                ([1, 64, 40, 100], [1, 64, 20, 50], [1, 64, 10, 25]).
-        """
-        if type(inputs) == tuple:
-            inputs = list(inputs)
-
-        assert len(inputs) >= len(self.in_channels)  # 4 > 3
-
+        # Remove extra inputs if necessary
         if len(inputs) > len(self.in_channels):
-            for _ in range(len(inputs) - len(self.in_channels)):
-                del inputs[0]
+            inputs = list(inputs[-len(self.in_channels):])
 
-        # build laterals
+        # Build laterals with compressed channels
         laterals = [
-            lateral_conv(inputs[i + self.start_level])
+            lateral_conv(inputs[i])
             for i, lateral_conv in enumerate(self.lateral_convs)
         ]
 
-        # build top-down path
-        used_backbone_levels = len(laterals)
-        for i in range(used_backbone_levels - 1, 0, -1):
-            prev_shape = laterals[i - 1].shape[2:]
-            laterals[i - 1] += F.interpolate(
-                laterals[i], size=prev_shape, mode='nearest'
-            )
+        # Apply pyramid pooling
+        pooled = [
+            pool(lateral)
+            for pool, lateral in zip(self.pyramid_pools, laterals)
+        ]
 
-        outs = [self.fpn_convs[i](laterals[i])
-                for i in range(used_backbone_levels)]
-        return tuple(outs)
+        # Top-down path with adaptive fusion
+        for i in range(len(pooled)-1, 0, -1):
+            upsampled = F.interpolate(
+                pooled[i],
+                size=pooled[i-1].shape[-2:],
+                mode='bilinear',
+                align_corners=False
+            )
+            pooled[i-1] = self.fusions[i-1](pooled[i-1], upsampled)
+
+        return tuple(pooled)
